@@ -14,26 +14,26 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
-
 import com.frank.ffmpeg.FFmpegCmd
 import com.frank.ffmpeg.R
 import com.frank.ffmpeg.adapter.WaterfallAdapter
-import com.frank.ffmpeg.model.VideoLayout
 import com.frank.ffmpeg.gif.HighQualityGif
 import com.frank.ffmpeg.handler.FFmpegHandler
-import com.frank.ffmpeg.tool.JsonParseTool
-import com.frank.ffmpeg.util.BitmapUtil
-import com.frank.ffmpeg.util.FFmpegUtil
-import com.frank.ffmpeg.util.FileUtil
-
-import java.io.File
-import java.util.ArrayList
-
 import com.frank.ffmpeg.handler.FFmpegHandler.MSG_BEGIN
 import com.frank.ffmpeg.handler.FFmpegHandler.MSG_FINISH
 import com.frank.ffmpeg.handler.FFmpegHandler.MSG_PROGRESS
 import com.frank.ffmpeg.listener.OnItemClickListener
+import com.frank.ffmpeg.model.VideoLayout
+import com.frank.ffmpeg.tool.JsonParseTool
+import com.frank.ffmpeg.util.BitmapUtil
+import com.frank.ffmpeg.util.FFmpegUtil
+import com.frank.ffmpeg.util.FileUtil
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
 import java.util.Locale
+
 
 /**
  * video process by FFmpeg command
@@ -163,7 +163,20 @@ class VideoHandleActivity : BaseActivity() {
     override fun onSelectedFile(filePath: String) {
         doHandleVideo(filePath)
     }
-
+    private fun copyToDisk(
+        applicationName: String,
+        suffix: String,
+    ) {
+        val absolutePath = filesDir.absolutePath
+        val fileApp1 = File(absolutePath, applicationName + suffix)
+        if (!fileApp1.exists()) {
+            val inputStream = assets.open(applicationName + suffix)
+            File(
+                filesDir.absolutePath,
+                applicationName + suffix
+            ).writeBytes(inputStream.readBytes())
+        }
+    }
     /**
      * Using FFmpeg cmd to handle video
      *
@@ -276,13 +289,20 @@ class VideoHandleActivity : BaseActivity() {
                 }
             }
             8 -> { //combine video which layout could be horizontal of vertical
-                val input1 = PATH + File.separator + "input1.mp4"
-                val input2 = PATH + File.separator + "input2.mp4"
-                outputPath = PATH + File.separator + "multi.mp4"
-                if (!FileUtil.checkFileExist(input1) || !FileUtil.checkFileExist(input2)) {
-                    return
+                copyToDisk("input3",".mp4")
+                copyToDisk("input4",".mp4")
+//                copyToDisk("multi",".mp4")
+                val input1 = filesDir.absolutePath + File.separator + "input4.mp4"
+                val input2 = filesDir.absolutePath + File.separator + "input3.mp4"
+                outputPath =  filesDir.absolutePath + File.separator + "multi.mp4"
+                val outf = File(outputPath)
+                if (!outf.exists()){
+                    outf.createNewFile()
                 }
-                commandLine = FFmpegUtil.multiVideo(input1, input2, outputPath, VideoLayout.LAYOUT_HORIZONTAL)
+//                if (!FileUtil.checkFileExist(input1) || !FileUtil.checkFileExist(input2)) {
+//                    return
+//                }
+                commandLine = FFmpegUtil.multiVideo(input1, input2, outputPath, VideoLayout.LAYOUT_VERTICAL)
             }
             9 -> { //video reverse
                 outputPath = PATH + File.separator + "reverse.mp4"
@@ -360,6 +380,17 @@ class VideoHandleActivity : BaseActivity() {
         if (ffmpegHandler != null && commandLine != null) {
             ffmpegHandler!!.executeFFmpegCmd(commandLine)
         }
+    }
+    @Throws(IOException::class)
+    private fun InputStreamToByte(`is`: InputStream): ByteArray {
+        val bytestream = ByteArrayOutputStream()
+        var ch: Int
+        while (`is`.read().also { ch = it } != -1) {
+            bytestream.write(ch)
+        }
+        val imgdata = bytestream.toByteArray()
+        bytestream.close()
+        return imgdata
     }
 
     /**

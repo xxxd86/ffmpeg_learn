@@ -559,10 +559,13 @@ public class FFmpegUtil {
      */
     public static String[] multiVideo(String input1, String input2, String outputPath, int videoLayout) {
         //hstack: horizontal vstack: vertical
-        String multiVideo = "ffmpeg -i -i -filter_complex hstack -y";
+        String multiVideo = "ffmpeg -i -i -filter_complex " +
+                "[0:v][1:v]hstack=inputs=2[v];[0:a]anull[a] " +
+                "-map [v] -map [a] -y";
         if (videoLayout == VideoLayout.LAYOUT_VERTICAL) {
             multiVideo = multiVideo.replace("hstack", "vstack");
         }
+
         return insert(multiVideo.split(" "), 2, input1, 4, input2, outputPath);
     }
 

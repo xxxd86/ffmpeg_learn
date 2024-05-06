@@ -1,7 +1,11 @@
 package com.frank.ffmpeg.activity
 
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -16,15 +20,29 @@ import com.frank.ffmpeg.listener.OnItemClickListener
  */
 class MainActivity : BaseActivity() {
 
+    val REQUEST_MANAGE_FILES_ACCESS =2
     override val layoutId: Int
         get() = R.layout.activity_main
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        getpermission()
         initView()
     }
+    private fun getpermission(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            //判断是否有管理外部存储的权限
+            if (!Environment.isExternalStorageManager()) {
+                val intent =  Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                intent.setData(Uri.parse("package:$packageName"));
+                startActivityForResult(intent, REQUEST_MANAGE_FILES_ACCESS);
+            } else {
 
+            }
+        } else {
+
+        }
+    }
     private fun initView() {
         val list = listOf(
                 getString(R.string.audio_handle),
